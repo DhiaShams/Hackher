@@ -1,93 +1,183 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { toBionic } from '../utils/bionic';
 import { getSynonym } from '../utils/synonyms';
-import { Star } from 'lucide-react';
+import { Star, ArrowRight, ArrowLeft } from 'lucide-react';
 
 const BionicOverlay = ({ text }) => {
-    const initialWords = useMemo(() => {
-        return text ? toBionic(text) : [];
+    // 1. Split Text into Sentences
+    const sentences = useMemo(() => {
+        if (!text) return [];
+        // Split by punctuation (. ! ?), keeping punctuation attached.
+        const match = text.match(/[^.!?]+[.!?]+/g);
+        if (match) {
+            return match.map(s => s.trim());
+        }
+        // Fallback if no punctuation found or just one sentence
+        return [text.trim()];
     }, [text]);
 
-    const [words, setWords] = useState(initialWords);
+    const [activeIndex, setActiveIndex] = useState(0);
+
+    // Track simplified words per sentence
+    // Structure: { [sentenceIndex]: [{ wordIndex: newBionicWord }] } is too complex.
+    // Let's just store a global set of simplified words? No, indices restart per sentence.
+    // Solution: Store modifications as { "sentenceIndex-wordIndex": newWordObj }
+    const [simplifiedMap, setSimplifiedMap] = useState({});
     const [simplifiedCount, setSimplifiedCount] = useState(0);
-    const [hoveredIndex, setHoveredIndex] = useState(null);
-    const [simplifiedIndices, setSimplifiedIndices] = useState(new Set());
 
-    // Update words when text changes
-    React.useEffect(() => {
-        setWords(initialWords);
+    // Reset state on new text
+    useEffect(() => {
+        setActiveIndex(0);
+        setSimplifiedMap({});
         setSimplifiedCount(0);
-        setSimplifiedIndices(new Set());
-    }, [initialWords]);
+    }, [text]);
 
-    const handleWordClick = useCallback((index, originalWord) => {
+    // Refs for scrolling
+    const activeSentenceRef = useRef(null);
+
+    // Scroll active sentence into view
+    useEffect(() => {
+        if (activeSentenceRef.current) {
+            activeSentenceRef.current.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }
+    }, [activeIndex]);
+
+    const handlePrev = () => {
+        if (activeIndex > 0) {
+            setActiveIndex(prev => prev - 1);
+        }
+    };
+
+    const handleNext = () => {
+        if (activeIndex < sentences.length - 1) {
+            setActiveIndex(prev => prev + 1);
+        }
+    };
+
+    const handleWordClick = useCallback((sentenceIndex, wordIndex, originalWord) => {
+        // Only allow interaction on active sentence? Requirement says "active sentence must still support... Features".
+        // It implies interaction.
         const synonym = getSynonym(originalWord);
         if (synonym) {
-            // Replace the word with the synonym
             const [processedSynonym] = toBionic(synonym);
 
-            const newWords = [...words];
-            newWords[index] = processedSynonym;
-            setWords(newWords);
+            setSimplifiedMap(prev => ({
+                ...prev,
+                [`${sentenceIndex}-${wordIndex}`]: processedSynonym
+            }));
+
             setSimplifiedCount(prev => prev + 1);
-            setSimplifiedIndices(prev => new Set([...prev, index]));
-            
-            // Visual feedback: briefly highlight the word
-            setHoveredIndex(index);
-            setTimeout(() => setHoveredIndex(null), 600);
         }
-    }, [words]);
+    }, []);
 
     return (
-        <div className="w-full h-full">
-            {/* Fun Stats Header */}
-            {simplifiedCount > 0 && (
-                <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-[#38A169] bg-[#F0FFF4] px-4 py-2 rounded-full shadow-md border-2 border-[#38A169]">
-                    <Star size={16} className="text-[#38A169] fill-[#38A169]" />
-                    <span>Awesome! You simplified {simplifiedCount} word{simplifiedCount !== 1 ? 's' : ''}! 🎉</span>
-                </div>
-            )}
-            
-            {/* Bionic Text with high contrast - Black OpenDyslexic font */}
-            <div 
-                className="text-left select-none text-black leading-relaxed"
-                style={{ 
-                    fontFamily: 'OpenDyslexic, system-ui, sans-serif',
-                    fontSize: '1.2rem',
-                    lineHeight: '1.8'
+        <div className="w-full h-full pb-20 relative">
+
+            <div
+                className="text-center select-none text-black leading-loose"
+                style={{
+                    fontFamily: "'Comic Neue', 'Comic Sans MS', cursive, system-ui, sans-serif",
+                    fontSize: '1.5rem', // Increased font size
+                    wordSpacing: '0.5rem', // Increased space between words
                 }}
             >
-                {words.map((wordObj, i) => {
-                    const hasSynonym = getSynonym(wordObj.original);
-                    const isHovered = hoveredIndex === i;
-                    const isSimplified = simplifiedIndices.has(i);
-                    const isSimplifiable = hasSynonym && !isSimplified && !isHovered;
-                    
+                {sentences.map((sentence, sIdx) => {
+                    const isActive = sIdx === activeIndex;
+
+                    // Memoize bionic conversion for this sentence?
+                    // toBionic is fast enough to run in render for distinct sentences.
+                    const sentenceWords = toBionic(sentence);
+
                     return (
-                        <React.Fragment key={i}>
-                            <span
-                                onClick={() => handleWordClick(i, wordObj.original)}
-                                onMouseEnter={() => hasSynonym && !isSimplified && setHoveredIndex(i)}
-                                onMouseLeave={() => setHoveredIndex(null)}
-                                className={`
-                                    inline-block transition-all duration-200 ease-in-out
-                                    ${hasSynonym && !isSimplified ? 'cursor-pointer' : 'cursor-default'}
-                                    ${isSimplifiable ? 'border-b-2 border-dotted border-[#3182CE] hover:border-[#38A169]' : ''}
-                                    ${isHovered ? 'bg-[#3182CE]/20 scale-105 rounded px-1 shadow-sm' : ''}
-                                    ${isSimplified ? 'text-[#38A169] font-semibold' : ''}
-                                    ${hasSynonym && !isSimplified && !isHovered ? 'hover:bg-[#3182CE]/10 rounded px-0.5' : ''}
-                                `}
-                                title={hasSynonym && !isSimplified ? `Tap to simplify: "${wordObj.original}" → "${getSynonym(wordObj.original)}"` : ""}
-                            >
-                                {/* First half of word in bold black */}
-                                <b className="font-black text-black">{wordObj.bold}</b>
-                                {/* Rest of word */}
-                                <span className={isSimplified ? 'text-[#38A169]' : 'text-black'}>{wordObj.regular}</span>
-                            </span>
-                            {' '}
-                        </React.Fragment>
+                        <div
+                            key={sIdx}
+                            ref={isActive ? activeSentenceRef : null}
+                            onClick={() => !isActive && setActiveIndex(sIdx)}
+                            className={`
+                                mb-8 p-6 rounded-2xl transition-all duration-500 ease-in-out mx-auto max-w-3xl
+                                ${isActive
+                                    ? 'opacity-100 scale-102 bg-gradient-to-r from-[#FFE5B4] to-[#FFF4E6] border-4 border-[#FB923C] shadow-2xl transform z-10'
+                                    : 'opacity-40 blur-[1px] grayscale hover:opacity-60 cursor-pointer border-4 border-transparent'
+                                }
+                            `}
+                        >
+                            {sentenceWords.map((wordObj, wIdx) => {
+                                // Check if we simplified this word
+                                const simplifiedWord = simplifiedMap[`${sIdx}-${wIdx}`];
+                                const currentWordObj = simplifiedWord || wordObj;
+                                const isSimplified = !!simplifiedWord;
+
+                                const hasSynonym = getSynonym(currentWordObj.original);
+                                const isSimplifiable = isActive && hasSynonym && !isSimplified;
+
+                                return (
+                                    <React.Fragment key={wIdx}>
+                                        <span
+                                            onClick={(e) => {
+                                                e.stopPropagation(); // Prevent toggling sentence focus when clicking word
+                                                if (isActive) handleWordClick(sIdx, wIdx, currentWordObj.original);
+                                            }}
+                                            className={`
+                                                transition-all duration-200
+                                                ${isSimplifiable ? 'cursor-pointer border-b-2 border-dotted border-[#3182CE] hover:border-[#38A169] hover:bg-[#3182CE]/10 rounded px-1' : ''}
+                                                ${isSimplified ? 'text-[#38A169] font-bold' : ''}
+                                            `}
+                                            title={isSimplifiable ? `Tap to simplify: "${currentWordObj.original}" → "${getSynonym(currentWordObj.original)}"` : ""}
+                                        >
+                                            {!isSimplified ? (
+                                                <>
+                                                    <b className="font-black text-black">{currentWordObj.bold}</b>
+                                                    <span className="text-[#2D3748]">{currentWordObj.regular}</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <b className="font-black text-[#38A169]">{currentWordObj.bold}</b>
+                                                    <span className="text-[#38A169] font-bold">{currentWordObj.regular}</span>
+                                                </>
+                                            )}
+                                        </span>
+                                        {' '}
+                                    </React.Fragment>
+                                );
+                            })}
+                        </div>
                     );
                 })}
+            </div>
+
+            {/* Floating Navigation Buttons */}
+            <div className="fixed bottom-8 right-8 flex gap-4 z-50">
+                <button
+                    onClick={handlePrev}
+                    disabled={activeIndex === 0}
+                    className={`
+                        p-4 rounded-full shadow-2xl transition-all duration-300
+                        ${activeIndex === 0
+                            ? 'bg-gray-300 cursor-not-allowed hidden'
+                            : 'bg-[#FB923C] text-white hover:bg-[#F97316] hover:scale-110 active:scale-95'
+                        }
+                    `}
+                    aria-label="Previous sentence"
+                >
+                    <ArrowLeft size={32} />
+                </button>
+                <button
+                    onClick={handleNext}
+                    disabled={activeIndex === sentences.length - 1}
+                    className={`
+                        p-4 rounded-full shadow-2xl transition-all duration-300
+                        ${activeIndex === sentences.length - 1
+                            ? 'bg-gray-300 cursor-not-allowed hidden'
+                            : 'bg-[#3182CE] text-white hover:bg-[#2C5282] hover:scale-110 active:scale-95 animate-bounce-slight'
+                        }
+                    `}
+                    aria-label="Next sentence"
+                >
+                    <ArrowRight size={32} />
+                </button>
             </div>
         </div>
     );

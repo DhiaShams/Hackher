@@ -2,12 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import Comic Sans and other kid-friendly fonts */
+@import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&family=Fredoka:wght@400;500;600;700&display=swap');
+
 * {
   box-sizing: border-box;
 }
 
 :root {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: 'Comic Neue', 'Comic Sans MS', cursive, system-ui, sans-serif;
 }
 
 body {
@@ -17,6 +20,7 @@ body {
   min-height: 100vh;
   background-color: #FFFAF0;
   color: #2D3748;
+  font-family: 'Comic Neue', 'Comic Sans MS', cursive, system-ui, sans-serif;
 }
 
 /* Custom scrollbar - child-friendly */

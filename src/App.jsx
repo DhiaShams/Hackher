@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import OCRProcessor from './components/OCRProcessor';
 import BionicOverlay from './components/BionicOverlay';
-import { Camera, Loader2, Star } from 'lucide-react';
+import { Camera, Loader2 } from 'lucide-react';
 
 function App() {
   const [image, setImage] = useState(null);
@@ -39,45 +39,81 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FFFAF0] p-4 font-sans">
-      {/* Simple Header */}
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6 text-[#2D3748] text-center">
-          📚 Super Reading Helper
-        </h1>
-
-        {/* Camera Button - Prominent and Child-Friendly */}
+    <div className="min-h-screen bg-[#FFFAF0] p-4" style={{ fontFamily: "'Comic Neue', 'Comic Sans MS', cursive" }}>
+      {/* Header with Logo */}
+      <div className="max-w-6xl mx-auto">
         {!image && (
-          <div className="flex flex-col items-center justify-center min-h-[60vh]">
-            <button
-              onClick={handleCameraClick}
-              className="group relative p-8 rounded-full bg-white border-4 border-[#FFD700] shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95"
-            >
-              <Camera 
-                size={80} 
-                className="text-[#3182CE] group-hover:text-[#38A169] transition-colors duration-300" 
-              />
-              <div className="absolute -top-2 -right-2 animate-bounce">
-                <Star size={24} className="text-[#FFD700] fill-[#FFD700]" />
+          <>
+            {/* Header Section */}
+            <div className="text-center mb-12">
+              <div className="flex items-center justify-center gap-4 mb-6">
+                <div className="text-6xl animate-bounce">📚</div>
+                <h1 className="text-5xl md:text-6xl font-bold text-[#2D3748]" style={{ fontFamily: "'Fredoka', 'Comic Neue', cursive" }}>
+                  Super Reading Helper
+                </h1>
+                <div className="text-6xl animate-bounce" style={{ animationDelay: '0.2s' }}>✨</div>
               </div>
-            </button>
-            <p className="mt-6 text-lg text-[#2D3748] font-semibold">
-              Tap the camera to scan your page! 📸
-            </p>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-          </div>
+              <p className="text-xl text-[#2D3748] font-semibold">
+                Make reading fun and easy!
+              </p>
+            </div>
+
+            {/* Main Action Area */}
+            <div className="flex flex-col items-center justify-center min-h-[60vh]">
+              {/* Decorative Background Elements */}
+              <div className="relative w-full max-w-2xl mx-auto">
+                {/* Floating decorative circles */}
+                <div className="absolute top-10 left-10 w-20 h-20 bg-[#FFD700]/20 rounded-full blur-xl animate-pulse"></div>
+                <div className="absolute bottom-20 right-10 w-32 h-32 bg-[#FFA500]/20 rounded-full blur-xl animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+                <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-[#3182CE]/20 rounded-full blur-xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+
+                {/* Main Camera Button Card */}
+                <div className="relative bg-white rounded-3xl shadow-2xl p-12 mb-8 transform hover:scale-105 transition-all duration-300">
+                  <div className="text-center">
+                    <button
+                      onClick={handleCameraClick}
+                      className="group relative mx-auto mb-6 p-12 rounded-full bg-gradient-to-br from-[#FFD700] via-[#FFA500] to-[#FF8C00] border-4 border-white shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 active:scale-95"
+                    >
+                      <Camera 
+                        size={100} 
+                        className="text-white drop-shadow-2xl" 
+                      />
+                      {/* Glow effect */}
+                      <div className="absolute inset-0 rounded-full bg-white/30 blur-xl animate-pulse"></div>
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Hidden Input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+            </div>
+          </>
         )}
 
         {/* Image Viewer */}
         {image && (
           <div className="space-y-4">
+            {/* Fun Title for Reading View */}
+            {text && (
+              <div className="text-center mb-6">
+                <h1 className="text-5xl md:text-6xl font-bold text-[#2D3748] mb-2" style={{ fontFamily: "'Fredoka', 'Comic Neue', cursive" }}>
+                  Reading Adventure Time!
+                </h1>
+                <p className="text-lg text-[#3182CE] font-semibold">
+                  Tap words to make them easier!
+                </p>
+              </div>
+            )}
+
             {/* Image Container - Only show image during processing */}
             {!text && (
               <div className="relative w-full max-w-lg mx-auto rounded-2xl overflow-hidden bg-black border-4 border-[#FFD700] shadow-2xl">
@@ -100,7 +136,7 @@ function App() {
                   {isProcessing && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm z-20">
                       <Loader2 size={48} className="animate-spin mb-4 text-[#FFD700]" />
-                      <p className="text-lg font-semibold animate-pulse text-white">
+                      <p className="text-lg font-semibold animate-pulse text-white" style={{ fontFamily: "'Comic Neue', 'Comic Sans MS', cursive" }}>
                         Reading your page... 📖
                       </p>
                     </div>
@@ -109,26 +145,27 @@ function App() {
               </div>
             )}
 
-            {/* Bionic Text Display - Separate from image */}
+            {/* Bionic Text Display - Centered on page */}
             {text && (
-              <div className="w-full max-w-4xl mx-auto rounded-2xl bg-white border-4 border-[#FFD700] shadow-2xl p-6">
-                <div className="text-center mb-4">
-                  <h2 className="text-xl font-bold text-[#2D3748]">📖 Your Bionic Reading Text</h2>
-                  <p className="text-sm text-[#718096]">Tap words to simplify them!</p>
+              <div className="flex justify-center items-start min-h-[60vh]">
+                <div className="w-full max-w-4xl mx-auto rounded-2xl bg-white border-4 border-[#FFD700] shadow-2xl p-8 mb-32">
+                  <BionicOverlay text={text} />
                 </div>
-                <BionicOverlay text={text} />
               </div>
             )}
+          </div>
+        )}
 
-            {/* Retake Button */}
-            <div className="flex justify-center">
-              <button
-                onClick={handleRetake}
-                className="px-6 py-3 rounded-full bg-white border-2 border-[#A0AEC0] text-[#2D3748] font-semibold hover:bg-[#3182CE] hover:text-white hover:border-[#3182CE] transition-all duration-200 shadow-md"
-              >
-                📷 Take New Photo
-              </button>
-            </div>
+        {/* Retake Button - Fixed at very bottom */}
+        {image && (
+          <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-40">
+            <button
+              onClick={handleRetake}
+              className="p-5 rounded-full bg-gradient-to-r from-[#FFA500] to-[#FF8C00] text-white shadow-2xl hover:shadow-3xl hover:scale-105 active:scale-95 transition-all duration-200 border-4 border-[#FFD700] flex items-center justify-center"
+              aria-label="Choose Another Photo"
+            >
+              <Camera size={32} className="text-white" />
+            </button>
           </div>
         )}
       </div>
