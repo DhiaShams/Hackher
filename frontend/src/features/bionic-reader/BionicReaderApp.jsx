@@ -3,6 +3,7 @@ import CameraView from './components/CameraView';
 import OCRProcessor from './components/OCRProcessor';
 import BionicOverlay from './components/BionicOverlay';
 import { Camera, Loader2, ArrowLeft } from 'lucide-react';
+import SnowmanAvatar from '../games/components/SnowmanAvatar';
 
 const BionicReaderApp = ({ onBack }) => {
     const [image, setImage] = useState(null);
@@ -92,6 +93,16 @@ const BionicReaderApp = ({ onBack }) => {
                     </button>
                 </div>
             )}
+
+            {/* Global Avatar for Reading Lens */}
+            <div style={{ position: 'fixed', bottom: '0', left: '0', zIndex: 60, pointerEvents: 'none' }}>
+                <SnowmanAvatar
+                    size="xlarge"
+                    isVisible={true}
+                    isSpeaking={false}
+                    emotion={text ? 'happy' : 'encouraging'}
+                />
+            </div>
         </div>
     );
 };

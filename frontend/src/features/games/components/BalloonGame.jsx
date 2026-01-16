@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import useSpeechRecognition from '../hooks/useSpeechRecognition';
 import { calculateLevelRisk, calculateRisk } from '../utils/riskLogic';
 import { LEVELS, shuffleItems } from '../data/levels';
+import SnowmanAvatar from './SnowmanAvatar';
 
 const BalloonGame = () => {
     const { startListening, stopListening, lastWord, isListening, error, hasBrowserSupport, resetTranscript } = useSpeechRecognition();
@@ -94,6 +95,27 @@ const BalloonGame = () => {
         startListening();
     };
 
+    // TTS Helpers
+    const getKidVoice = () => {
+        const voices = window.speechSynthesis.getVoices();
+        const preferredVoices = ['Google US English', 'Microsoft Zira', 'Samantha'];
+        for (let name of preferredVoices) {
+            const found = voices.find(v => v.name.includes(name));
+            if (found) return found;
+        }
+        return voices.find(v => v.lang.startsWith('en')) || voices[0];
+    };
+
+    const speakText = (text) => {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        const voice = getKidVoice();
+        if (voice) utterance.voice = voice;
+        utterance.pitch = 1.4;
+        utterance.rate = 1.1;
+        window.speechSynthesis.speak(utterance);
+    };
+
     const finishLevel = () => {
         stopListening(); // Explicitly stop to clean up session
         const duration = Date.now() - startTime;
@@ -103,6 +125,9 @@ const BalloonGame = () => {
         const result = calculateLevelRisk(duration);
         setLevelResult(result);
 
+        // Avatar Congratulates User
+        speakText("Yay! Great job! You finished the level!");
+
         if (currentLevelIndex < LEVELS.length - 1) {
             setGameStatus('level_completed');
         } else {
@@ -111,6 +136,7 @@ const BalloonGame = () => {
     };
 
     const nextLevel = () => {
+        window.speechSynthesis.cancel(); // Stop congratulation speech when moving on
         startLevel(currentLevelIndex + 1);
     }
 
@@ -418,6 +444,15 @@ const BalloonGame = () => {
                     {error && <span style={{ color: '#EF4444' }}> | ERROR: {error}</span>}
                 </div>
             )}
+            {/* Global Avatar for Word Detective */}
+            <div style={{ position: 'fixed', bottom: '0', left: '0', zIndex: 60, pointerEvents: 'none' }}>
+                <SnowmanAvatar
+                    size="xlarge"
+                    isVisible={true}
+                    isSpeaking={false}
+                    emotion={gameStatus === 'playing' ? 'encouraging' : 'happy'}
+                />
+            </div>
         </div>
     );
 };

@@ -1,0 +1,246 @@
+/* Avatar Animations CSS */
+
+/* Base bounce animation - happy state */
+@keyframes avatar-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.avatar-bounce {
+  animation: avatar-bounce 2s ease-in-out infinite;
+}
+
+/* Jump animation - excited state */
+@keyframes avatar-jump {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  30% {
+    transform: translateY(-20px) scale(1.05);
+  }
+  50% {
+    transform: translateY(-25px) scale(1.08);
+  }
+  70% {
+    transform: translateY(-20px) scale(1.05);
+  }
+}
+
+.avatar-jump {
+  animation: avatar-jump 1.5s ease-in-out infinite;
+}
+
+/* Tilt animation - thinking state */
+@keyframes avatar-tilt {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-5deg);
+  }
+  75% {
+    transform: rotate(5deg);
+  }
+}
+
+.avatar-tilt {
+  animation: avatar-tilt 3s ease-in-out infinite;
+}
+
+/* Wave animation - encouraging state */
+@keyframes avatar-wave {
+  0%, 100% {
+    transform: rotate(0deg) translateY(0);
+  }
+  25% {
+    transform: rotate(-10deg) translateY(-5px);
+  }
+  50% {
+    transform: rotate(10deg) translateY(-8px);
+  }
+  75% {
+    transform: rotate(-10deg) translateY(-5px);
+  }
+}
+
+.avatar-wave {
+  animation: avatar-wave 1.8s ease-in-out infinite;
+}
+
+/* Spin animation - celebrating state */
+@keyframes avatar-spin {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(90deg) scale(1.1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.15);
+  }
+  75% {
+    transform: rotate(270deg) scale(1.1);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+.avatar-spin {
+  animation: avatar-spin 2s ease-in-out infinite;
+}
+
+/* Emotion indicators */
+.emotion-sparkles,
+.emotion-confetti {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.sparkle,
+.confetti {
+  font-size: 20px;
+  animation: float-up 2s ease-in-out infinite;
+  display: inline-block;
+}
+
+.sparkle:nth-child(2),
+.confetti:nth-child(2) {
+  animation-delay: 0.3s;
+}
+
+.sparkle:nth-child(3),
+.confetti:nth-child(3) {
+  animation-delay: 0.6s;
+}
+
+@keyframes float-up {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-15px) scale(1.2);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-30px) scale(0.8);
+    opacity: 0;
+  }
+}
+
+/* Thought bubble */
+.thought-bubble {
+  position: absolute;
+  top: -30px;
+  right: -10px;
+  font-size: 24px;
+  animation: thought-pulse 2s ease-in-out infinite;
+}
+
+@keyframes thought-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+/* Dialogue bubble animations */
+@keyframes dialogue-appear {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+}
+
+.avatar-dialogue-bubble {
+  animation: dialogue-appear 0.3s ease-out;
+}
+
+/* Typing cursor blink */
+@keyframes blink {
+  0%, 49% {
+    opacity: 1;
+  }
+  50%, 100% {
+    opacity: 0;
+  }
+}
+
+/* Transition state */
+.transitioning {
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+/* Entrance animation */
+@keyframes avatar-entrance {
+  0% {
+    opacity: 0;
+    transform: scale(0) rotate(-180deg);
+  }
+  60% {
+    transform: scale(1.1) rotate(10deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.avatar-entrance {
+  animation: avatar-entrance 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Exit animation */
+@keyframes avatar-exit {
+  0% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0) rotate(180deg);
+  }
+}
+
+.avatar-exit {
+  animation: avatar-exit 0.5s ease-in forwards;
+}
+
+/* Hover effect */
+.snowman-avatar:hover .avatar-container {
+  transform: scale(1.05);
+  transition: transform 0.2s ease;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .avatar-dialogue-bubble {
+    max-width: 200px;
+    font-size: 12px;
+    padding: 10px 14px;
+  }
+  
+  .emotion-sparkles,
+  .emotion-confetti {
+    font-size: 16px;
+  }
+}

@@ -3,6 +3,9 @@ import { Search, Bell, Home, Award, Users, ArrowLeft } from 'lucide-react';
 import BalloonGame from './features/games/components/BalloonGame';
 import StoryMode from './features/games/components/StoryTelling/StoryMode';
 import BionicReaderApp from './features/bionic-reader/BionicReaderApp';
+import SnowmanAvatar from './features/games/components/SnowmanAvatar';
+import AchievementsTab from './components/AchievementsTab';
+import ParentsTab from './components/ParentsTab';
 
 export default function Dashboard() {
     const [selectedCourse, setSelectedCourse] = useState(null);
@@ -123,43 +126,56 @@ export default function Dashboard() {
 
                 {/* Main Content */}
                 <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-6 shadow-xl border-2 border-orange-200">
-                    {/* Title Section */}
-                    <div className="text-center mb-12">
-                        <div className="flex justify-center mb-6">
-                            <div className="w-24 h-24 bg-gradient-to-br from-orange-300 to-amber-400 rounded-full flex items-center justify-center shadow-xl">
-                                <span className="text-5xl">✨</span>
-                            </div>
-                        </div>
-                        <h1 className="text-5xl font-bold mb-2 bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500 bg-clip-text text-transparent" style={{ fontFamily: "'Fredoka', 'Comic Neue', cursive" }}>
-                            Welcome to Creative Kids Academy!
-                        </h1>
-                        <p className="text-orange-700 text-xl mt-4 max-w-2xl mx-auto font-semibold">
-                            Where young minds flourish and explore! 🌟
-                        </p>
-                    </div>
 
-                    {/* Course Cards - Centered Square Buttons */}
-                    <div className="flex justify-center gap-8 mb-8">
-                        {courses.map((course) => (
-                            <button
-                                key={course.id}
-                                onClick={() => handleCourseClick(course.title, course.featureId)}
-                                className={`${course.color} ${course.hoverColor} rounded-3xl p-4 relative overflow-hidden w-48 h-48 flex flex-col items-center justify-center text-center hover:scale-105 active:scale-95 transition-all duration-300 shadow-xl hover:shadow-2xl group border-2 border-orange-200`}
-                            >
-                                <div className="mb-4 transform group-hover:scale-110 transition-transform duration-300">
-                                    <span className={course.size}>{course.icon}</span>
+                    {/* HOME TAB CONTENT */}
+                    {activeTab === 'home' && (
+                        <div className="animate-in fade-in duration-500">
+                            {/* Title Section */}
+                            <div className="text-center mb-12">
+                                <div className="flex justify-center mb-6">
+                                    <div className="w-24 h-24 bg-gradient-to-br from-orange-300 to-amber-400 rounded-full flex items-center justify-center shadow-xl">
+                                        <span className="text-5xl">✨</span>
+                                    </div>
                                 </div>
-                                <h3 className="text-2xl font-bold text-orange-900" style={{ fontFamily: "'Fredoka', 'Comic Neue', cursive" }}>{course.title}</h3>
-                            </button>
-                        ))}
-                    </div>
+                                <h1 className="text-5xl font-bold mb-2 bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500 bg-clip-text text-transparent" style={{ fontFamily: "'Fredoka', 'Comic Neue', cursive" }}>
+                                    Welcome to Creative Kids Academy!
+                                </h1>
+                                <p className="text-orange-700 text-xl mt-4 max-w-2xl mx-auto font-semibold">
+                                    Where young minds flourish and explore! 🌟
+                                </p>
+                            </div>
 
-                    {/* Selected Course Indicator */}
-                    {selectedCourse && (
-                        <div className="mt-6 p-6 bg-gradient-to-r from-orange-200 to-amber-200 rounded-2xl text-center shadow-lg border-2 border-orange-300">
-                            <p className="text-2xl font-bold text-orange-800" style={{ fontFamily: "'Comic Neue', 'Comic Sans MS', cursive" }}>🎉 Great choice! You selected: {selectedCourse} 🎉</p>
+                            {/* Course Cards - Centered Square Buttons */}
+                            <div className="flex justify-center gap-8 mb-8">
+                                {courses.map((course) => (
+                                    <button
+                                        key={course.id}
+                                        onClick={() => handleCourseClick(course.title, course.featureId)}
+                                        className={`${course.color} ${course.hoverColor} rounded-3xl p-4 relative overflow-hidden w-48 h-48 flex flex-col items-center justify-center text-center hover:scale-105 active:scale-95 transition-all duration-300 shadow-xl hover:shadow-2xl group border-2 border-orange-200`}
+                                    >
+                                        <div className="mb-4 transform group-hover:scale-110 transition-transform duration-300">
+                                            <span className={course.size}>{course.icon}</span>
+                                        </div>
+                                        <h3 className="text-2xl font-bold text-orange-900" style={{ fontFamily: "'Fredoka', 'Comic Neue', cursive" }}>{course.title}</h3>
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Selected Course Indicator */}
+                            {selectedCourse && (
+                                <div className="mt-6 p-6 bg-gradient-to-r from-orange-200 to-amber-200 rounded-2xl text-center shadow-lg border-2 border-orange-300">
+                                    <p className="text-2xl font-bold text-orange-800" style={{ fontFamily: "'Comic Neue', 'Comic Sans MS', cursive" }}>🎉 Great choice! You selected: {selectedCourse} 🎉</p>
+                                </div>
+                            )}
                         </div>
                     )}
+
+                    {/* ACHIEVEMENTS TAB CONTENT */}
+                    {activeTab === 'achievements' && <AchievementsTab />}
+
+                    {/* PARENTS TAB CONTENT */}
+                    {activeTab === 'parents' && <ParentsTab />}
+
                 </div>
             </div>
 
@@ -204,6 +220,16 @@ export default function Dashboard() {
                         </button>
                     </div>
                 </div>
+            </div>
+
+            {/* Global Avatar for Homepage */}
+            <div style={{ position: 'fixed', bottom: '0', left: '0', zIndex: 60, pointerEvents: 'none' }}>
+                <SnowmanAvatar
+                    size="xlarge"
+                    isVisible={true}
+                    isSpeaking={false}
+                    emotion="happy"
+                />
             </div>
         </div>
     );
