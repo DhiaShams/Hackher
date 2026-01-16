@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './StoryMode.css';
+import SnowmanAvatar from '../SnowmanAvatar';
 
 // Import local images
 import img1 from './images/1.png';
@@ -59,16 +60,57 @@ const StoryMode = () => {
     const [displayedText, setDisplayedText] = useState('');
     const [showNextBtn, setShowNextBtn] = useState(false);
     const [showImage, setShowImage] = useState(false);
+    const [isTTSActive, setIsTTSActive] = useState(false);
 
     const currentStep = DEMO_SCRIPT[phase];
+
+    // Voice Selection Help
+    const getKidVoice = () => {
+        const voices = window.speechSynthesis.getVoices();
+        // Try to find a specific female or child-sounding voice
+        // This is heuristic as "child" voices are rarely explicitly labeled in standard APIs
+        const preferredVoices = [
+            'Google US English', // Often good
+            'Microsoft Zira',    // Female, higher pitch
+            'Samantha',          // Mac Female
+        ];
+
+        for (let name of preferredVoices) {
+            const found = voices.find(v => v.name.includes(name));
+            if (found) return found;
+        }
+        return voices.find(v => v.lang.startsWith('en')) || voices[0];
+    };
+
+    // Helper for TTS
+    const speakText = (text) => {
+        window.speechSynthesis.cancel();
+        setIsTTSActive(true);
+        const utterance = new SpeechSynthesisUtterance(text);
+        const voice = getKidVoice();
+        if (voice) utterance.voice = voice;
+        utterance.pitch = 1.4;
+        utterance.rate = 1.1;
+
+        utterance.onend = () => setIsTTSActive(false);
+        utterance.onerror = () => setIsTTSActive(false);
+
+        window.speechSynthesis.speak(utterance);
+    };
 
     // Effect to handle Avatar turns automatically or reset for Kid turns
     useEffect(() => {
         if (!currentStep) return;
 
+        // Cancel any existing speech when the step changes
+        window.speechSynthesis.cancel();
+        setIsTTSActive(false);
+
         if (currentStep.speaker === 'avatar') {
             // Avatar speaks immediately
             setDisplayedText(currentStep.text);
+            speakText(currentStep.text);
+
             // Only show image if one exists
             if (currentStep.image) {
                 setShowImage(true);
@@ -82,6 +124,12 @@ const StoryMode = () => {
             setShowImage(false); // Hide image initially for kid
             setShowNextBtn(false);
         }
+
+        // Cleanup function to stop speech if component unmounts or phase changes
+        return () => {
+            window.speechSynthesis.cancel();
+            setIsTTSActive(false);
+        };
     }, [phase, currentStep]);
 
     const handleMicClick = () => {
@@ -93,6 +141,9 @@ const StoryMode = () => {
         setTimeout(() => {
             setIsListening(false);
             setDisplayedText(currentStep.text);
+
+            // Avatar reads the kid's line ("Continues dialog")
+            speakText(currentStep.text);
 
             // Reveal image 2 seconds AFTER text appears
             setTimeout(() => {
@@ -136,13 +187,23 @@ const StoryMode = () => {
                 <div className="intro-spacer" style={{ height: '50px' }}></div>
             )}
 
-            {/* Text Bubble */}
-            <div className={`story-bubble ${currentStep.speaker === 'avatar' ? 'avatar-bubble' : 'kid-bubble'}`}>
+            {/* Text Bubble - Always use avatar-bubble to show Avatar is the narrator */}
+            <div className="story-bubble avatar-bubble">
                 {isListening ? (
                     <span className="listening-text">Listening... 🎤</span>
                 ) : (
                     displayedText || <span className="placeholder-text">Tap the mic to say your line!</span>
                 )}
+            </div>
+
+            {/* Always Show Avatar */}
+            <div className="fixed-avatar">
+                <SnowmanAvatar
+                    size="xlarge"
+                    isVisible={true}
+                    isSpeaking={isTTSActive}
+                    emotion={currentStep.actionRequired ? 'encouraging' : 'happy'}
+                />
             </div>
 
             {/* Controls */}
