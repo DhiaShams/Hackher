@@ -90,11 +90,8 @@ const BalloonGame = () => {
         setGameStatus('playing');
         setStartTime(Date.now());
 
-        // Force a fresh start for the microphone
-        stopListening();
-        setTimeout(() => {
-            startListening();
-        }, 200);
+        // Ensure the microphone is active
+        startListening();
     };
 
     const finishLevel = () => {
