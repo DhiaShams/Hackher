@@ -1,0 +1,186 @@
+/* Red Word Highlight */
+.red-word-highlight {
+    color: #FF0000 !important;
+    font-weight: bold !important;
+    cursor: help !important;
+    text-decoration: underline dotted #FF0000 2px !important;
+    transition: transform 0.2s;
+    display: inline-block;
+}
+
+.red-word-highlight:hover {
+    transform: scale(1.1);
+    background-color: rgba(255, 255, 0, 0.2);
+    border-radius: 4px;
+}
+
+/* Flashcard Popup */
+#re-flashcard {
+    position: fixed !important;
+    /* Force Fixed */
+    z-index: 2147483647 !important;
+    background: #ffffff;
+    /* Stylish Gradient Border Effect */
+    border: 3px solid transparent;
+    background-image: linear-gradient(white, white), linear-gradient(135deg, #FFD700, #FFA500);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+
+    border-radius: 20px;
+    /* Even rounder */
+    padding: 24px;
+    /* Spacious padding */
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+
+    font-family: 'Verdana', sans-serif;
+    min-width: 320px;
+    /* Much Bigger */
+    max-width: 380px;
+
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.1s ease-in-out;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+
+    /* Ensure no blur inheritance */
+    filter: none !important;
+    backdrop-filter: none !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    isolation: isolate;
+    transform: none;
+    will-change: opacity, transform;
+
+    /* Ensure it starts off-screen */
+    top: -9999px;
+    left: -9999px;
+}
+
+/* Focus Mode Styles - MOVED OUTSIDE of #re-flashcard */
+body.re-focus-mode .re-sentence {
+    transition: opacity 0.5s ease;
+}
+
+body.re-focus-mode .re-sentence .re-word:not(.red-word-highlight) {
+    filter: blur(2px);
+    opacity: 0.6;
+    transition: filter 0.5s ease, opacity 0.5s ease;
+}
+
+body.re-focus-mode .re-sentence:hover .re-word:not(.red-word-highlight) {
+    filter: blur(1px);
+    opacity: 0.8;
+}
+
+/* FIX: Explicitly unblur words when the sentence is active */
+body.re-focus-mode .re-sentence.re-active .re-word {
+    filter: none !important;
+    opacity: 1 !important;
+    transition: none !important;
+}
+
+/* Ensure Red Words are ALWAYS clear and poppy */
+body.re-focus-mode .re-sentence .red-word-highlight {
+    filter: none !important;
+    opacity: 1 !important;
+    z-index: 10;
+    position: relative;
+    text-shadow: 0 0 1px rgba(255, 0, 0, 0.1);
+}
+
+#re-flashcard.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+#re-flashcard.sticky-mode {
+    pointer-events: auto;
+    border-color: #FF0000;
+}
+
+.re-actions {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 20;
+}
+
+.re-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+    margin-right: 40px;
+    /* Space for buttons */
+}
+
+/* Removed redundant block to ensure clean cascading from previous replacement */
+
+#re-flashcard h3 {
+    margin: 0;
+    font-size: 22px;
+    /* Large Title */
+    color: #d69e2e;
+    /* refined gold */
+    filter: none !important;
+    transform: none !important;
+    -webkit-font-smoothing: auto;
+    text-shadow: none !important;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+#re-flashcard-text {
+    font-size: 28px;
+    /* Huge word text */
+    font-weight: bold;
+    color: #2D3748;
+    text-align: center;
+    margin: 5px 0;
+}
+
+#re-flashcard .re-btn {
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    line-height: normal;
+    padding: 0;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    filter: none !important;
+    z-index: 2147483648;
+    -webkit-font-smoothing: auto;
+    backface-visibility: visible;
+    transform: none !important;
+    border: 2px solid transparent;
+}
+
+#re-flashcard .re-close-btn {
+    background: #ffeb3b;
+    color: #cc0000;
+    border-color: #cc0000;
+}
+
+#re-flashcard .re-speak-btn {
+    background: #4299e1;
+    /* Blue */
+    color: white;
+    border-color: #2b6cb0;
+    font-size: 12px;
+}
+
+#re-flashcard .re-btn:hover {
+    transform: scale(1.1) !important;
+    filter: brightness(1.1) !important;
+}

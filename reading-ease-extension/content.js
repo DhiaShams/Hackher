@@ -27,8 +27,8 @@
         }
 
         body.re-focus-mode .re-sentence.re-active {
-            filter: none;
-            opacity: 1;
+            filter: none !important;
+            opacity: 1 !important;
             background-color: #FFFACD; /* LemonChiffon Highlight */
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             color: black;
@@ -38,6 +38,14 @@
             z-index: 1000;
             position: relative;
             border-left: 5px solid #FFD700;
+            transition: none !important; /* Instant Unblur */
+        }
+        
+        /* Ensure children are also unblurred immediately */
+        body.re-focus-mode .re-sentence.re-active .re-word {
+            filter: none !important;
+            opacity: 1 !important;
+            transition: none !important;
         }
 
         /* Mic Button Styles */
@@ -105,17 +113,28 @@
     let isListening = false;
     let allSentences = []; // simplified array for navigation
 
+    let currentSentenceTranscript = ""; // Persistent history for the current sentence
+
     // --- Voice Logic ---
     function initSpeechRecognition() {
-        if (!('webkitSpeechRecognition' in window)) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        if (!SpeechRecognition) {
             console.warn("Web Speech API not supported.");
+            alert("Your browser does not support Voice Navigation. Please use Chrome.");
             return;
         }
 
-        recognition = new webkitSpeechRecognition();
+        recognition = new SpeechRecognition();
         recognition.continuous = true;
         recognition.interimResults = true;
         recognition.lang = 'en-US';
+
+        recognition.onstart = () => {
+            console.log("Speech Service Started");
+            const btn = document.getElementById('re-mic-btn');
+            if (btn) btn.classList.add('re-listening');
+        };
 
         recognition.onresult = (event) => {
             if (!activeSentence) return;
@@ -124,15 +143,28 @@
             for (let i = event.resultIndex; i < event.results.length; ++i) {
                 if (event.results[i].isFinal) {
                     const finalText = event.results[i][0].transcript;
-                    console.log("Final Speech:", finalText);
-                    checkMatch(finalText);
+                    console.log("Final Speech Chunk:", finalText);
+                    currentSentenceTranscript += " " + finalText; // Accumulate
                 } else {
                     interimTranscript += event.results[i][0].transcript;
                 }
             }
-            if (interimTranscript) {
-                console.log("Listening:", interimTranscript);
-                checkMatch(interimTranscript);
+
+            // Visual Feedback in Tooltip
+            const btn = document.getElementById('re-mic-btn');
+            if (btn) {
+                const tooltip = btn.querySelector('.re-tooltip span');
+                // Show last 3 words of what is being heard
+                const display = (interimTranscript || currentSentenceTranscript).slice(-30);
+                if (tooltip) tooltip.innerText = display ? `...${display}` : "Listening...";
+            }
+
+            // Combine history + current interim for checking
+            const fullTranscript = (currentSentenceTranscript + " " + interimTranscript).trim();
+
+            if (fullTranscript) {
+                // console.log("Full Context:", fullTranscript); // Optional: Debugging
+                checkMatch(fullTranscript);
             }
         };
 
@@ -146,9 +178,23 @@
 
         recognition.onend = () => {
             if (isListening) {
-                console.log("Speech recognition ended (restarting)...");
-                // Restart if it stopped unexpectedly but we still want it on
-                try { recognition.start(); } catch (e) { }
+                console.log("Speech recognition ended. Restarting in 1s...");
+
+                // Longer delay to break rapid failure loops
+                setTimeout(() => {
+                    if (isListening) {
+                        try {
+                            // Ensure it's fully stopped before restarting
+                            recognition.stop();
+                        } catch (e) { }
+
+                        try {
+                            recognition.start();
+                        } catch (e) {
+                            console.warn("Retrying start failed:", e);
+                        }
+                    }
+                }, 1000); // Increased from 500ms to 1000ms for stability
             }
         };
     }
@@ -156,37 +202,57 @@
     function checkMatch(transcript) {
         if (!activeSentence) return;
 
-        // Clean text for comparison (remove punctuation, lowercase)
-        const targetText = activeSentence.innerText.toLowerCase().replace(/[^\w\s]|_/g, "").replace(/\s+/g, " ").trim();
-        const spokenText = transcript.toLowerCase().replace(/[^\w\s]|_/g, "").replace(/\s+/g, " ").trim();
+        // Clean text: Replace punctuation with SPACE to prevent word merging (e.g. "one:two" -> "one two")
+        const clean = (t) => t.toLowerCase().replace(/[^\w\s]|_/g, " ").replace(/\s+/g, " ").trim();
 
-        // Get keywords (last 3-4 words of the sentence)
+        const targetText = clean(activeSentence.innerText);
+        const spokenText = clean(transcript);
+
+        // Remove common written-out punctuation words from spoken text if they appear (just in case)
+        // e.g. if user literally says "comma" or voice engine outputs it
+        const spokenWordsCleaned = spokenText.split(' ').filter(w => !['comma', 'period', 'colon', 'semicolon', 'dash', 'hyphen'].includes(w)).join(' ');
+
         const targetWords = targetText.split(' ');
         if (targetWords.length === 0) return;
 
-        // Relaxed Strategy: Check if *any* of the last few words were spoken
-        // This helps if the sentence is long and the user pauses, or if speech rec misses a word
-        const wordsToCheck = 3;
-        const keywords = targetWords.slice(-wordsToCheck);
+        // Smart Logic: "Move only after I complete reading"
+        // We only look for the absolute END of the sentence.
 
-        console.log(`Checking match...
-        Target Sentence (End): "...${keywords.join(' ')}"
-        Spoken: "${spokenText}"`);
+        const lastWord = targetWords[targetWords.length - 1];
+        const secondLastWord = targetWords.length > 1 ? targetWords[targetWords.length - 2] : null;
 
-        // Check if ANY of the keywords are present in the spoken text
-        const matchFound = keywords.some(keyword => {
-            if (keyword.length < 3) return false; // Ignore short words like 'is', 'a' to avoid false positives
-            return spokenText.includes(keyword);
-        });
+        // Common words that shouldn't trigger a move if they are merely "second to last"
+        // (Prevent jumping on "the", "to", "and" unless it's the actual end)
+        const COMMON_FILLERS = ['the', 'and', 'to', 'of', 'in', 'is', 'it', 'a', 'an'];
+
+        let matchFound = false;
+
+        // Condition 1: Spoken text contains the LAST word (Strongest signal)
+        if (lastWord && lastWord.length > 1 && spokenWordsCleaned.includes(lastWord)) {
+            matchFound = true;
+            console.log(`Matched Last Word: "${lastWord}"`);
+        }
+        // Condition 2: Spoken text contains SECOND to last word, BUT it must be unique (not a filler)
+        else if (secondLastWord &&
+            secondLastWord.length > 2 &&
+            !COMMON_FILLERS.includes(secondLastWord) &&
+            spokenWordsCleaned.includes(secondLastWord)) {
+            matchFound = true;
+            console.log(`Matched Unique Second-Last Word: "${secondLastWord}"`);
+        }
 
         if (matchFound) {
-            console.log("✅ Match found! Advancing...");
+            console.log("✅ Sentence Completed! Advancing...");
             advanceSentence();
         }
     }
 
     function advanceSentence() {
         if (!activeSentence) return;
+
+        // Reset history for the next sentence
+        currentSentenceTranscript = "";
+        console.log("History cleared for new sentence.");
 
         const currentIndex = allSentences.indexOf(activeSentence);
         if (currentIndex < allSentences.length - 1) {
@@ -233,6 +299,188 @@
     }
 
 
+    // --- Red Word Alert Setup ---
+    const RED_WORDS = [
+        'was', 'said', 'of', 'you', 'to', 'are', 'does', 'what', 'they'
+    ];
+
+    const RED_WORD_HINTS = {
+        'was': "rhymes with 'buzz'",
+        'said': "rhymes with 'bed'",
+        'of': "sounds like 'uv'",
+        'you': "sounds like 'yoo'",
+        'to': "rhymes with 'do'",
+        'are': "sounds like the letter 'R'",
+        'does': "sounds like 'duzz'",
+        'what': "rhymes with 'hot'",
+        'they': "rhymes with 'day'"
+    };
+
+    let stickyWord = null; // Track if we are locked onto a word
+
+    // Create Flashcard UI
+    function createFlashcard() {
+        const existing = document.getElementById('re-flashcard');
+        if (existing) existing.remove();
+
+        const card = document.createElement('div');
+        card.id = 're-flashcard';
+        card.innerHTML = `
+            <div class="re-actions">
+                <button class="re-btn re-close-btn" title="Close">✖</button>
+                <button class="re-btn re-speak-btn" title="Read Aloud">🔊</button>
+            </div>
+            <div class="re-header">
+                <h3>⚠️ Tricky Word</h3>
+            </div>
+            <div id="re-flashcard-text"></div>
+            <div class="re-hint"></div>
+        `;
+        document.body.appendChild(card);
+
+        // Close Button Listener
+        const closeBtn = card.querySelector('.re-close-btn');
+        if (closeBtn) {
+            closeBtn.addEventListener('mousedown', (e) => {
+                e.preventDefault(); e.stopPropagation();
+                hideFlashcard(true);
+            });
+            closeBtn.addEventListener('click', (e) => {
+                e.preventDefault(); e.stopPropagation();
+                hideFlashcard(true);
+            });
+        }
+
+        // Speak Button Listener
+        const speakBtn = card.querySelector('.re-speak-btn');
+        if (speakBtn) {
+            speakBtn.addEventListener('click', (e) => {
+                e.preventDefault(); e.stopPropagation();
+                const word = card.querySelector('#re-flashcard-text').innerText.replace(/"/g, '');
+                speakRedWord(word);
+            });
+        }
+
+        // Prevent click inside card from bubbling up
+        card.addEventListener('click', (e) => e.stopPropagation());
+
+        return card;
+    }
+    const flashcard = createFlashcard();
+
+    // Show Flashcard
+    function showFlashcard(word, rect, isSticky = false) {
+        if (stickyWord && !isSticky) return; // Don't override sticky with hover
+
+        if (isSticky) {
+            stickyWord = word;
+            flashcard.classList.add('sticky-mode');
+        } else {
+            flashcard.classList.remove('sticky-mode');
+        }
+
+        const hint = RED_WORD_HINTS[word.toLowerCase()] || "Tricky to sound out!";
+
+        flashcard.querySelector('#re-flashcard-text').innerText = `"${word}"`;
+        flashcard.querySelector('.re-hint').innerText = `💡 Hint: ${hint}`;
+
+        // Save hint for speech
+        flashcard.dataset.currentHint = hint;
+
+        // Calculate Position (Viewport Relative)
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
+        // Default: Below and centered-ish, relative to viewport
+        let top = rect.bottom + 10;
+        let left = rect.left;
+
+        // Prevent going off right edge
+        if (left + 250 > viewportWidth) {
+            left = viewportWidth - 260;
+        }
+
+        // Prevent going off bottom edge (flip to top)
+        if (top + 150 > viewportHeight) {
+            top = rect.top - 160;
+        }
+
+        // Use Math.round to prevent sub-pixel rendering blur
+        flashcard.style.top = `${Math.round(top)}px`;
+        flashcard.style.left = `${Math.round(left)}px`;
+
+        flashcard.classList.add('visible');
+    }
+
+    // Hide Flashcard
+    function hideFlashcard(force = false) {
+        if (stickyWord && !force) return; // Stay visible if sticky
+
+        flashcard.classList.remove('visible');
+        if (force) {
+            stickyWord = null;
+            flashcard.classList.remove('sticky-mode');
+        }
+    }
+
+    // Speak Red Word
+    // --- Voice Setup ---
+    let availableVoices = [];
+
+    function loadVoices() {
+        // Fetch voices (async operation in some browsers)
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length > 0) {
+            availableVoices = voices;
+            console.log("Extension: Voices loaded:", availableVoices.map(v => v.name));
+        }
+    }
+
+    if ('speechSynthesis' in window) {
+        // Try to load immediately
+        loadVoices();
+        // Hook into event for async loading
+        if (window.speechSynthesis.onvoiceschanged !== undefined) {
+            window.speechSynthesis.onvoiceschanged = loadVoices;
+        }
+    }
+
+    // Speak Red Word
+    function speakRedWord(word) {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+
+            const hint = RED_WORD_HINTS[word.toLowerCase()] || "";
+            const text = `The word is ${word}. ${hint}`;
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.9;
+            utterance.pitch = 1.0;
+
+            // Ensure we have voices even if the event missed
+            if (availableVoices.length === 0) {
+                availableVoices = window.speechSynthesis.getVoices();
+            }
+
+            // Priority Selection for Female Voices
+            const preferredVoice = availableVoices.find(v =>
+                v.name.includes('Google US English') ||
+                v.name.includes('Microsoft Zira') ||
+                v.name.includes('Samantha') ||
+                v.name.toLowerCase().includes('female')
+            );
+
+            if (preferredVoice) {
+                console.log("Using Voice:", preferredVoice.name);
+                utterance.voice = preferredVoice;
+            } else {
+                console.warn("Target voice not found. Using default.");
+            }
+
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
     // --- Core Focus Mode Logic ---
     function setActive(sentenceElement) {
         if (activeSentence) {
@@ -251,6 +499,14 @@
         if (!match) return `<span class="re-word">${word}</span>`;
 
         const [_, letters, punctuation] = match;
+        const lowerWord = letters.toLowerCase();
+
+        // CHECK FOR RED WORD
+        if (RED_WORDS.includes(lowerWord)) {
+            return `<span class="re-word red-word-highlight" data-word="${letters}">${letters}${punctuation}</span>`;
+        }
+
+        // Standard Bionic Logic
         const len = letters.length;
         let mid;
         if (len <= 3) mid = 1;
@@ -261,6 +517,44 @@
 
         return `<span class="re-word"><b>${bold}</b>${regular}${punctuation}</span>`;
     }
+
+    // Event Delegation for Red Words (Hover Only)
+    document.body.addEventListener('mouseover', (e) => {
+        if (e.target.classList.contains('red-word-highlight')) {
+            const word = e.target.getAttribute('data-word');
+            const rect = e.target.getBoundingClientRect();
+            // Show immediately on hover
+            showFlashcard(word, rect);
+        }
+    });
+
+    document.body.addEventListener('mouseout', (e) => {
+        if (e.target.classList.contains('red-word-highlight')) {
+            // Check if we are moving TO the flashcard
+            if (e.relatedTarget && (e.relatedTarget.id === 're-flashcard' || e.relatedTarget.closest('#re-flashcard'))) {
+                return; // Don't hide if moving to the card
+            }
+            hideFlashcard(true); // Force hide on mouseout
+        }
+    });
+
+    // Also hide if leaving the flashcard itself
+    document.addEventListener('mouseout', (e) => {
+        if (e.target.id === 're-flashcard' || e.target.closest('#re-flashcard')) {
+            if (!e.relatedTarget || (!e.relatedTarget.classList.contains('red-word-highlight') && !e.relatedTarget.closest('#re-flashcard'))) {
+                hideFlashcard(true);
+            }
+        }
+    });
+
+    // Remove click-to-stick, only speak
+    document.body.addEventListener('click', (e) => {
+        if (e.target.classList.contains('red-word-highlight')) {
+            e.stopPropagation();
+            const word = e.target.getAttribute('data-word');
+            speakRedWord(word);
+        }
+    });
 
     // TreeWalker to find text nodes
     const walker = document.createTreeWalker(
@@ -296,22 +590,58 @@
         sentences.forEach(sentenceText => {
             if (!sentenceText.trim()) return;
 
-            const span = document.createElement('span');
-            span.className = 're-sentence';
-            span.tabIndex = 0; // Make focusable
+            // --- SMART CHUNKING LOGIC ---
+            // Instead of one giant sentence, split by commas/semicolons if it's long.
+            // This creates smaller "yellow windows" for the kid.
 
-            // Bionic Processing
-            const words = sentenceText.split(/\s+/);
-            span.innerHTML = words.map(bionicifyWord).join(' ') + ' '; // Add space back
+            // 1. Split by rough clause delimiters
+            // Regex splits on: [,;:]
+            const chunks = sentenceText.split(/([,;:]+)/);
 
-            // Interaction
-            span.addEventListener('click', (e) => {
-                e.stopPropagation();
-                updateActiveFromClick(span);
+            let currentChunk = "";
+            const finalChunks = [];
+
+            chunks.forEach(part => {
+                // If it's a delimiter, attach to previous chunk
+                if (/^[,;:]+$/.test(part)) {
+                    currentChunk += part;
+                    finalChunks.push(currentChunk.trim());
+                    currentChunk = "";
+                } else {
+                    // It's text.
+                    // If adding this text makes it too long (e.g. > 15 words) and we already have content, push previous
+                    const words = part.split(/\s+/).length;
+                    if (currentChunk.length > 0 && (currentChunk.split(/\s+/).length + words) > 15) {
+                        finalChunks.push(currentChunk.trim());
+                        currentChunk = part;
+                    } else {
+                        currentChunk += part;
+                    }
+                }
             });
+            if (currentChunk.trim()) finalChunks.push(currentChunk.trim());
 
-            fragment.appendChild(span);
-            allSentences.push(span); // Track for navigation
+
+            finalChunks.forEach(chunkText => {
+                if (!chunkText.trim()) return;
+
+                const span = document.createElement('span');
+                span.className = 're-sentence';
+                span.tabIndex = 0; // Make focusable
+
+                // Bionic Processing
+                const words = chunkText.split(/\s+/);
+                span.innerHTML = words.map(bionicifyWord).join(' ') + ' '; // Add space back
+
+                // Interaction
+                span.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    updateActiveFromClick(span);
+                });
+
+                fragment.appendChild(span);
+                allSentences.push(span); // Track for navigation
+            });
         });
 
         // Replace text node with our interactive spans
