@@ -1,7 +1,7 @@
 import React from 'react';
 import { X, User, Award, BookOpen, Clock, Settings } from 'lucide-react';
 
-const ProfileModal = ({ isOpen, onClose }) => {
+const ProfileModal = ({ isOpen, onClose, onViewAchievements }) => {
     if (!isOpen) return null;
 
     const profileData = {
@@ -78,7 +78,10 @@ const ProfileModal = ({ isOpen, onClose }) => {
                         <Settings size={20} />
                         Settings
                     </button>
-                    <button className="w-full bg-white hover:bg-orange-50 text-orange-700 py-3 rounded-2xl font-bold text-lg border-2 border-orange-300 transition-all duration-200">
+                    <button
+                        onClick={onViewAchievements}
+                        className="w-full bg-white hover:bg-orange-50 text-orange-700 py-3 rounded-2xl font-bold text-lg border-2 border-orange-300 transition-all duration-200"
+                    >
                         View Achievements
                     </button>
                 </div>

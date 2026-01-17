@@ -182,6 +182,7 @@ const BalloonGame = () => {
             <div style={{
                 display: 'flex',
                 alignItems: 'center',
+                justifyContent: 'flex-end',
                 gap: '0.75rem',
                 marginBottom: '2rem'
             }}>
