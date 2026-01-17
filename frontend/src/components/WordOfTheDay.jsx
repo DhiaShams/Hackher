@@ -26,21 +26,27 @@ const WordOfTheDay = ({ onSpeakingChange }) => {
                 const pronunciation = pronMatch[1].trim();
                 const meaning = meaningMatch[1].trim();
 
-                setWordData({ word, pronunciation, meaning });
-                speakWord(word, pronunciation);
+                const newData = { word, pronunciation, meaning };
+                setWordData(newData);
+
+                // Speak after a slight delay to ensure render
+                setTimeout(() => {
+                    try {
+                        speakWord(word, pronunciation);
+                    } catch (e) {
+                        console.error("Speech error", e);
+                    }
+                }, 100);
             } else {
-                setWordData({
-                    word: "Sparkle",
-                    pronunciation: "SPAR-kul",
-                    meaning: "Shine brightly! ✨"
-                });
+                throw new Error("Invalid format");
             }
         } catch (error) {
             console.error("Error fetching word of the day:", error);
+            // Fallback data so box never disappears
             setWordData({
-                word: "Wonder",
-                pronunciation: "WUN-der",
-                meaning: "Amazing curiosity! 🌟"
+                word: "Sparkle",
+                pronunciation: "SPAR-kul",
+                meaning: "Shine brightly! ✨"
             });
         } finally {
             setIsLoading(false);
@@ -48,42 +54,59 @@ const WordOfTheDay = ({ onSpeakingChange }) => {
     };
 
     const speakWord = (word, pronunciation) => {
-        if ('speechSynthesis' in window) {
+        if (!('speechSynthesis' in window)) return;
+
+        try {
             window.speechSynthesis.cancel();
 
             if (onSpeakingChange) onSpeakingChange(true);
 
-            // Speak very slowly and clearly for kids
+            // Robust voice selection
+            const getKidVoice = () => {
+                const voices = window.speechSynthesis.getVoices();
+                const preferredVoices = ['Google US English', 'Microsoft Zira', 'Samantha'];
+
+                for (let name of preferredVoices) {
+                    const found = voices.find(v => v.name.includes(name));
+                    if (found) return found;
+                }
+                return voices.find(v => v.lang.startsWith('en')) || voices[0];
+            };
+
+            const voice = getKidVoice();
+            // KID VOICE SETTINGS: Higher Pitch + Energetic Rate
+            const kidPitch = 1.6;
+            const kidRate = 1.1;
+
             const utterance1 = new SpeechSynthesisUtterance(`Today's word is`);
-            utterance1.pitch = 1.4;
-            utterance1.rate = 0.7; // Slower
+            if (voice) utterance1.voice = voice;
+            utterance1.pitch = kidPitch;
+            utterance1.rate = kidRate;
 
             const utterance2 = new SpeechSynthesisUtterance(word);
-            utterance2.pitch = 1.4;
-            utterance2.rate = 0.6; // Very slow for the word
+            if (voice) utterance2.voice = voice;
+            utterance2.pitch = kidPitch;
+            utterance2.rate = 1.0;
 
             const utterance3 = new SpeechSynthesisUtterance(`Say it with me: ${pronunciation}`);
-            utterance3.pitch = 1.4;
-            utterance3.rate = 0.7;
+            if (voice) utterance3.voice = voice;
+            utterance3.pitch = kidPitch;
+            utterance3.rate = kidRate;
 
-            // Chain them with longer pauses
-            utterance1.onend = () => {
-                setTimeout(() => {
-                    window.speechSynthesis.speak(utterance2);
-                }, 800);
-            };
-
-            utterance2.onend = () => {
-                setTimeout(() => {
-                    window.speechSynthesis.speak(utterance3);
-                }, 1000);
-            };
-
+            utterance1.onend = () => setTimeout(() => window.speechSynthesis.speak(utterance2), 800);
+            utterance2.onend = () => setTimeout(() => window.speechSynthesis.speak(utterance3), 1000);
             utterance3.onend = () => {
                 if (onSpeakingChange) onSpeakingChange(false);
             };
 
+            utterance1.onerror = () => {
+                if (onSpeakingChange) onSpeakingChange(false);
+            };
+
             window.speechSynthesis.speak(utterance1);
+        } catch (e) {
+            console.error("Speech synthesis failed", e);
+            if (onSpeakingChange) onSpeakingChange(false);
         }
     };
 

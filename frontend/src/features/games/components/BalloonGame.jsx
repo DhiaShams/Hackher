@@ -3,6 +3,7 @@ import useSpeechRecognition from '../hooks/useSpeechRecognition';
 import { calculateLevelRisk, calculateRisk } from '../utils/riskLogic';
 import { LEVELS, shuffleItems } from '../data/levels';
 import SnowmanAvatar from './SnowmanAvatar';
+import bgImage from '../../../../assets/bg.jpeg';
 
 const BalloonGame = () => {
     const { startListening, stopListening, lastWord, isListening, error, hasBrowserSupport, resetTranscript } = useSpeechRecognition();
@@ -169,7 +170,11 @@ const BalloonGame = () => {
     return (
         <div style={{
             minHeight: '100vh',
-            background: 'linear-gradient(180deg, #B8D4E8 0%, #A8C8E0 100%)',
+            backgroundImage: `url(${bgImage})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            backgroundAttachment: 'fixed',
             padding: '2rem',
             fontFamily: "'Comic Neue', 'Comic Sans MS', cursive"
         }}>

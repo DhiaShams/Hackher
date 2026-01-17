@@ -88,28 +88,36 @@ const useAvatarTeacher = ({
 
             const utterance = new SpeechSynthesisUtterance(text);
 
-            // Kid-like voice settings
-            utterance.pitch = 1.6; // High pitch for young voice
-            utterance.rate = 1.25; // Energetic and fast
+            // Kid-like voice settings - MATCHING STORY MODE
+            utterance.pitch = 1.2; // Natural friendly pitch
+            utterance.rate = 1.1;  // Energetic and fast
 
             // Animation triggers
             utterance.onstart = () => setIsSpeaking(true);
             utterance.onend = () => setIsSpeaking(false);
             utterance.onerror = () => setIsSpeaking(false);
 
-            // Try to find a good voice
+            // Try to find a good voice (Consistent logic)
             const voices = window.speechSynthesis.getVoices();
+            const preferredVoices = [
+                'Google US English',
+                'Microsoft Zira',
+                'Samantha',
+            ];
 
-            // Priority: 
-            // 1. Google US English (often good quality)
-            // 2. Microsoft Zira (female, sounds better pitched up than David)
-            // 3. Any English voice
-            const preferredVoice = voices.find(voice =>
-                (voice.name.includes('Google US English') || voice.name.includes('Zira')) &&
-                voice.lang.includes('en')
-            ) || voices.find(voice => voice.lang.includes('en'));
+            let selectedVoice = null;
+            for (let name of preferredVoices) {
+                const found = voices.find(v => v.name.includes(name));
+                if (found) {
+                    selectedVoice = found;
+                    break;
+                }
+            }
+            if (!selectedVoice) {
+                selectedVoice = voices.find(v => v.lang.startsWith('en')) || voices[0];
+            }
 
-            if (preferredVoice) utterance.voice = preferredVoice;
+            if (selectedVoice) utterance.voice = selectedVoice;
 
             window.speechSynthesis.speak(utterance);
         }

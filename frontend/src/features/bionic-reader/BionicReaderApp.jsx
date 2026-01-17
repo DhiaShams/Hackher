@@ -4,6 +4,7 @@ import OCRProcessor from './components/OCRProcessor';
 import BionicOverlay from './components/BionicOverlay';
 import { Camera, Loader2, ArrowLeft } from 'lucide-react';
 import SnowmanAvatar from '../games/components/SnowmanAvatar';
+import bgImage from '../../../assets/bg.jpeg';
 
 const BionicReaderApp = ({ onBack }) => {
     const [image, setImage] = useState(null);
@@ -25,7 +26,10 @@ const BionicReaderApp = ({ onBack }) => {
     };
 
     return (
-        <div className="flex flex-col h-screen bg-gray-50 overflow-hidden font-sans">
+        <div
+            className="flex flex-col h-screen overflow-hidden font-sans bg-cover bg-center bg-no-repeat bg-fixed"
+            style={{ backgroundImage: `url(${bgImage})` }}
+        >
             {/* Top Header */}
             <header className="bg-white shadow-sm p-4 z-10 flex items-center justify-between">
                 {onBack && (

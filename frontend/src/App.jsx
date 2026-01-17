@@ -8,6 +8,7 @@ import AchievementsTab from './components/AchievementsTab';
 import ParentsTab from './components/ParentsTab';
 import WordOfTheDay from './components/WordOfTheDay';
 import ProfileModal from './components/ProfileModal';
+import bgImage from '../assets/bg.jpeg';
 
 export default function Dashboard() {
     const [selectedCourse, setSelectedCourse] = useState(null);
@@ -82,7 +83,10 @@ export default function Dashboard() {
 
     if (activeFeature === 'story-weaver') {
         return (
-            <div className="min-h-screen bg-gradient-to-b from-orange-50 via-yellow-50 to-amber-50 p-6">
+            <div
+                className="min-h-screen p-6 bg-cover bg-center bg-no-repeat bg-fixed"
+                style={{ backgroundImage: `url(${bgImage})` }}
+            >
                 <button
                     onClick={handleBackToDashboard}
                     className="mb-6 flex items-center gap-2 bg-gradient-to-r from-orange-400 to-amber-400 text-white px-6 py-3 rounded-full font-bold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
@@ -98,15 +102,13 @@ export default function Dashboard() {
 
     // Dashboard View
     return (
-        <div className="min-h-screen bg-gradient-to-b from-orange-50 via-yellow-50 to-amber-50 relative overflow-hidden pb-24" style={{ fontFamily: "'Comic Neue', 'Comic Sans MS', cursive" }}>
-            {/* Decorative Clouds - Warm tones */}
-            <div className="absolute top-10 left-10 w-32 h-20 bg-orange-100 rounded-full opacity-30 blur-md"></div>
-            <div className="absolute top-20 right-20 w-40 h-24 bg-yellow-100 rounded-full opacity-25 blur-md"></div>
-            <div className="absolute top-40 left-1/4 w-28 h-16 bg-amber-100 rounded-full opacity-20 blur-md"></div>
-            <div className="absolute top-60 right-1/3 w-36 h-20 bg-orange-100 rounded-full opacity-25 blur-md"></div>
-            <div className="absolute bottom-40 left-1/2 w-32 h-18 bg-yellow-100 rounded-full opacity-20 blur-md"></div>
-            <div className="absolute top-32 right-10 w-24 h-16 bg-amber-100 rounded-full opacity-20 blur-md"></div>
-
+        <div
+            className="min-h-screen relative overflow-hidden pb-24 bg-cover bg-center bg-no-repeat bg-fixed"
+            style={{
+                fontFamily: "'Comic Neue', 'Comic Sans MS', cursive",
+                backgroundImage: `url(${bgImage})`
+            }}
+        >
             {/* Desktop Layout */}
             <div className="max-w-5xl mx-auto p-4 relative z-10">
                 {/* Header - Proper Navbar */}

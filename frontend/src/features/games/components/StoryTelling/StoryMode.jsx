@@ -117,25 +117,25 @@ const StoryMode = () => {
             const voice = getKidVoice();
             if (voice) utterance.voice = voice;
 
-            // Emotional variation - NORMAL AND HAPPY TONE
+            // Emotional variation - REFINED TONE AND SPEED
             if (isExcited) {
-                utterance.pitch = 1.6;  // Friendly excited pitch
-                utterance.rate = 0.8;   // Natural pace for excitement
+                utterance.pitch = 1.3;  // Friendly, less squeaky
+                utterance.rate = 1.1;   // Brisk and energetic
             } else if (isQuestion) {
-                utterance.pitch = 1.5;  // Friendly questioning tone
-                utterance.rate = 0.7;
+                utterance.pitch = 1.2;  // Natural questioning
+                utterance.rate = 1.0;   // Normal speed
             } else if (isSad) {
-                utterance.pitch = 1.2;  // Gentle and sympathetic
-                utterance.rate = 0.65;
+                utterance.pitch = 1.1;  // Softly lower
+                utterance.rate = 0.9;   // Slightly slower than normal, but not dragging
             } else {
-                utterance.pitch = 1.4;  // Normal happy base pitch
-                utterance.rate = 0.7;   // Slow and clear base rate
+                utterance.pitch = 1.2;  // Cheerful base pitch
+                utterance.rate = 1.05;  // Slightly faster than standard
             }
 
             utterance.onend = () => {
                 currentIndex++;
-                // Natural pause between sentences
-                setTimeout(speakNextSentence, 1200);
+                // Natural pause between sentences - optimize flow
+                setTimeout(speakNextSentence, 800);
             };
 
             utterance.onerror = () => setIsTTSActive(false);
@@ -209,9 +209,45 @@ const StoryMode = () => {
         }
     };
 
+    // Save achievement when story ends
+    useEffect(() => {
+        if (!currentStep && phase === DEMO_SCRIPT.length) {
+            const achievement = {
+                id: 'story-hungry-cloud',
+                title: 'The Hungry Cloud',
+                completed: true,
+                timestamp: new Date().toISOString(),
+                stars: 3,
+                type: 'Story Mode'
+            };
+
+            // Get existing achievements or init empty array
+            const existing = JSON.parse(localStorage.getItem('storyAchievements') || '[]');
+
+            // Check if already saved today to avoid duplicates (optional, but good practice)
+            // For this demo, we'll just append or replace
+            const others = existing.filter(a => a.id !== 'story-hungry-cloud');
+            localStorage.setItem('storyAchievements', JSON.stringify([...others, achievement]));
+
+            console.log("Story Achievement Saved!");
+        }
+    }, [phase, currentStep]);
+
     // No restart button needed in UI as requested
 
-    if (!currentStep) return <div>End of Story</div>;
+    if (!currentStep) return (
+        <div className="story-container demo-mode" style={{ justifyContent: 'center', alignItems: 'center' }}>
+            <h1 style={{ fontSize: '3rem', color: '#667eea' }}>🎉 Amazing Story! 🎉</h1>
+            <p style={{ fontSize: '1.5rem', marginTop: '20px', color: '#555' }}>You've unlocked a new Badge!</p>
+            <button
+                onClick={() => window.location.reload()}
+                className="btn next-btn"
+                style={{ marginTop: '30px' }}
+            >
+                Play Again 🔄
+            </button>
+        </div>
+    );
 
     return (
         <div className="story-container demo-mode">
