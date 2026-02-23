@@ -1,6 +1,6 @@
-# EmpowRead (Hackher Project)
+# Ollie Reads (Hackher Project)
 
-**EmpowRead** is an innovative educational technology platform designed to make reading and learning more accessible, engaging, and personalized. Originally developed as part of a hackathon (Hackher), this project combines interactive features, AI integration, and gamification to create a supportive learning environment.
+**Ollie Reads** is an innovative educational technology platform designed to make reading and learning more accessible, engaging, and personalized. Originally developed as part of a hackathon (Hackher), this project combines interactive features, AI integration, and gamification to create a supportive learning environment.
 
 ## 🌟 Key Features
 
